@@ -2,8 +2,9 @@ package socketio
 
 import (
 	"bytes"
-	"github.com/googollee/go-engine.io"
 	"testing"
+
+	"github.com/robscc/go-engine.io"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
