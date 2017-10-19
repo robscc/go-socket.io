@@ -8,7 +8,7 @@ import (
 )
 
 // Socket is the socket object of socket.io.
-type Socket interface {
+type SocketInf interface {
 
 	// Id returns the session id of socket.
 	Id() string
@@ -36,9 +36,13 @@ type Socket interface {
 
 	// BroadcastTo broadcasts an event to the room with given args.
 	BroadcastTo(room, event string, args ...interface{}) error
+
+	Loop() error
 }
 
-type socket struct {
+type SocketWrapFunc func(SocketInf) SocketInf
+
+type Socket struct {
 	*socketHandler
 	conn      engineio.Conn
 	namespace string
@@ -46,23 +50,31 @@ type socket struct {
 	mu        sync.Mutex
 }
 
-func newSocket(conn engineio.Conn, base *baseHandler) *socket {
-	ret := &socket{
+func NewSocket(conn engineio.Conn, server *Server) SocketInf {
+	ret := &Socket{
 		conn: conn,
 	}
-	ret.socketHandler = newSocketHandler(ret, base)
+	ret.socketHandler = newSocketHandler(ret, server.baseHandler)
 	return ret
 }
 
-func (s *socket) Id() string {
+func NewSocketWithWrapFactory(f SocketWrapFunc, conn engineio.Conn, server *Server) SocketInf {
+	ret := &Socket{
+		conn: conn,
+	}
+	ret.socketHandler = newSocketHandler(ret, server.baseHandler)
+	return f(ret)
+}
+
+func (s *Socket) Id() string {
 	return s.conn.Id()
 }
 
-func (s *socket) Request() *http.Request {
+func (s *Socket) Request() *http.Request {
 	return s.conn.Request()
 }
 
-func (s *socket) Emit(event string, args ...interface{}) error {
+func (s *Socket) Emit(event string, args ...interface{}) error {
 	if err := s.socketHandler.Emit(event, args...); err != nil {
 		return err
 	}
@@ -72,11 +84,11 @@ func (s *socket) Emit(event string, args ...interface{}) error {
 	return nil
 }
 
-func (s *socket) Disconnect() {
+func (s *Socket) Disconnect() {
 	s.conn.Close()
 }
 
-func (s *socket) send(args []interface{}) error {
+func (s *Socket) send(args []interface{}) error {
 	packet := packet{
 		Type: _EVENT,
 		Id:   -1,
@@ -87,7 +99,7 @@ func (s *socket) send(args []interface{}) error {
 	return encoder.Encode(packet)
 }
 
-func (s *socket) sendConnect() error {
+func (s *Socket) sendConnect() error {
 	packet := packet{
 		Type: _CONNECT,
 		Id:   -1,
@@ -97,7 +109,7 @@ func (s *socket) sendConnect() error {
 	return encoder.Encode(packet)
 }
 
-func (s *socket) sendId(args []interface{}) (int, error) {
+func (s *Socket) sendId(args []interface{}) (int, error) {
 	s.mu.Lock()
 	packet := packet{
 		Type: _EVENT,
@@ -119,7 +131,7 @@ func (s *socket) sendId(args []interface{}) (int, error) {
 	return packet.Id, nil
 }
 
-func (s *socket) loop() error {
+func (s *Socket) Loop() error {
 	defer func() {
 		s.LeaveAll()
 		p := packet{

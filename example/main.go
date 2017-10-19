@@ -13,7 +13,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	server.On("connection", func(so socketio.Socket) {
+	server.On("connection", func(so socketio.SocketInf) {
 		log.Println("on connection")
 		so.Join("chat")
 		so.On("chat message", func(msg string) {
@@ -42,7 +42,7 @@ func main() {
 			log.Println("on disconnect")
 		})
 	})
-	server.On("error", func(so socketio.Socket, err error) {
+	server.On("error", func(so socketio.SocketInf, err error) {
 		log.Println("error:", err)
 	})
 

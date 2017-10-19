@@ -26,7 +26,7 @@ import (
 //     }
 //
 //     socket.Emit("send file", arg)
-//     socket.On("get file", func(so Socket, arg Arg) {
+//     socket.On("get file", func(so SocketInf, arg Arg) {
 //         b, _ := ioutil.ReadAll(arg.File.Data)
 //     })
 type Attachment struct {

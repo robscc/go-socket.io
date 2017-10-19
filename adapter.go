@@ -6,33 +6,33 @@ import "sync"
 type BroadcastAdaptor interface {
 
 	// Join causes the socket to join a room.
-	Join(room string, socket Socket) error
+	Join(room string, socket SocketInf) error
 
 	// Leave causes the socket to leave a room.
-	Leave(room string, socket Socket) error
+	Leave(room string, socket SocketInf) error
 
 	// Send will send an event with args to the room. If "ignore" is not nil, the event will be excluded from being sent to "ignore".
-	Send(ignore Socket, room, event string, args ...interface{}) error
+	Send(ignore SocketInf, room, event string, args ...interface{}) error
 }
 
 var newBroadcast = newBroadcastDefault
 
 type broadcast struct {
-	m map[string]map[string]Socket
+	m map[string]map[string]SocketInf
 	sync.RWMutex
 }
 
 func newBroadcastDefault() BroadcastAdaptor {
 	return &broadcast{
-		m: make(map[string]map[string]Socket),
+		m: make(map[string]map[string]SocketInf),
 	}
 }
 
-func (b *broadcast) Join(room string, socket Socket) error {
+func (b *broadcast) Join(room string, socket SocketInf) error {
 	b.Lock()
 	sockets, ok := b.m[room]
 	if !ok {
-		sockets = make(map[string]Socket)
+		sockets = make(map[string]SocketInf)
 	}
 	sockets[socket.Id()] = socket
 	b.m[room] = sockets
@@ -40,7 +40,7 @@ func (b *broadcast) Join(room string, socket Socket) error {
 	return nil
 }
 
-func (b *broadcast) Leave(room string, socket Socket) error {
+func (b *broadcast) Leave(room string, socket SocketInf) error {
 	b.Lock()
 	defer b.Unlock()
 	sockets, ok := b.m[room]
@@ -56,7 +56,7 @@ func (b *broadcast) Leave(room string, socket Socket) error {
 	return nil
 }
 
-func (b *broadcast) Send(ignore Socket, room, event string, args ...interface{}) error {
+func (b *broadcast) Send(ignore SocketInf, room, event string, args ...interface{}) error {
 	b.RLock()
 	sockets := b.m[room]
 	for id, s := range sockets {

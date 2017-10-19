@@ -12,6 +12,8 @@ type Server struct {
 	*namespace
 	broadcast BroadcastAdaptor
 	eio       *engineio.Server
+
+	wrapFunc SocketWrapFunc
 }
 
 // NewServer returns the server supported given transports. If transports is nil, the server will use ["polling", "websocket"] as default.
@@ -93,15 +95,24 @@ func (s *Server) BroadcastTo(room, message string, args ...interface{}) {
 	s.namespace.BroadcastTo(room, message, args...)
 }
 
+func (s *Server) SetWrapFunc(f SocketWrapFunc) {
+	s.wrapFunc = f
+}
+
 func (s *Server) loop() {
 	for {
 		conn, err := s.eio.Accept()
 		if err != nil {
 			return
 		}
-		s := newSocket(conn, s.baseHandler)
-		go func(s *socket) {
-			s.loop()
-		}(s)
+		var scli SocketInf
+		if s.wrapFunc != nil {
+			scli = NewSocketWithWrapFactory(s.wrapFunc, conn, s)
+		} else {
+			scli = NewSocket(conn, s)
+		}
+		go func(scli SocketInf) {
+			scli.Loop()
+		}(scli)
 	}
 }

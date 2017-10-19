@@ -45,7 +45,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	server.On("connection", func(so socketio.Socket) {
+	server.On("connection", func(so socketio.SocketInf) {
 		log.Println("on connection")
 		so.Join("chat")
 		so.On("chat message", func(msg string) {
@@ -56,7 +56,7 @@ func main() {
 			log.Println("on disconnect")
 		})
 	})
-	server.On("error", func(so socketio.Socket, err error) {
+	server.On("error", func(so socketio.SocketInf, err error) {
 		log.Println("error:", err)
 	})
 
@@ -111,13 +111,13 @@ socket.on('some:event', function (msg, sendAckCb) {
 ```go
 //You can use Emit or BroadcastTo with last parameter as callback for handling ack from client
 //Sending packet to room "room_name" and event "some:event"
-so.BroadcastTo("room_name", "some:event", dataForClient, func (so socketio.Socket, data string) {
+so.BroadcastTo("room_name", "some:event", dataForClient, func (so socketio.SocketInf, data string) {
 	log.Println("Client ACK with data: ", data)
 })
 
 // Or
 
-so.Emit("some:event", dataForClient, func (so socketio.Socket, data string) {
+so.Emit("some:event", dataForClient, func (so socketio.SocketInf, data string) {
 	log.Println("Client ACK with data: ", data)
 })
 ```

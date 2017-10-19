@@ -28,7 +28,7 @@ func newCaller(f interface{}) (*caller, error) {
 		args[i] = ft.In(i)
 	}
 	needSocket := false
-	if args[0].Name() == "Socket" {
+	if args[0].Name() == "SocketInf" {
 		args = args[1:]
 		needSocket = true
 	}
@@ -51,7 +51,7 @@ func (c *caller) GetArgs() []interface{} {
 	return ret
 }
 
-func (c *caller) Call(so Socket, args []interface{}) []reflect.Value {
+func (c *caller) Call(so SocketInf, args []interface{}) []reflect.Value {
 	var a []reflect.Value
 	diff := 0
 	if c.NeedSocket {

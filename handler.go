@@ -6,6 +6,15 @@ import (
 	"sync"
 )
 
+type HandlerInf interface {
+	On(event string, f interface{}) error
+	Emit(event string, args ...interface{}) error
+	Rooms() []string
+	Join(room string) error
+	Leave(room string) error
+	LeaveAll() error
+}
+
 type baseHandler struct {
 	events    map[string]*caller
 	name      string
@@ -38,11 +47,11 @@ type socketHandler struct {
 	*baseHandler
 	acksmu sync.Mutex
 	acks   map[int]*caller
-	socket *socket
+	socket *Socket
 	rooms  map[string]struct{}
 }
 
-func newSocketHandler(s *socket, base *baseHandler) *socketHandler {
+func newSocketHandler(s *Socket, base *baseHandler) *socketHandler {
 	events := make(map[string]*caller)
 	base.evMu.Lock()
 	for k, v := range base.events {
@@ -119,6 +128,7 @@ func (h *socketHandler) LeaveAll() error {
 		if err := h.baseHandler.broadcast.Leave(h.broadcastName(room), h.socket); err != nil {
 			return err
 		}
+		delete(h.rooms, room)
 	}
 	return nil
 }
